@@ -17,7 +17,7 @@ s = cv2.ximgproc.segmentation.createSelectiveSearchSegmentation()
 s.setBaseImage(img)
 s.switchToSelectiveSearchFast()
 boxes = s.process()     # 按可能性排列出现对象的所有区域
-candidate_boxes = boxes[:200]  # 选取前2000个区域
+candidate_boxes = boxes[:2000]  # 选取前2000个区域
 
 
 # 重叠率 (IOU) 判断每个区域是否包含对象
@@ -107,7 +107,7 @@ def selective_search(img):
     s.setBaseImage(img)
     s.switchToSelectiveSearchFast()
     boxes = s.process()
-    return boxes[:200]
+    return boxes[:2000]
 
 
 def prepare_save_batch(batch, img_tensor, img_label):
@@ -236,7 +236,7 @@ def train():
         return batch_x, batch_y
 
     # 开始训练过程
-    for epoch in range(1, 5):
+    for epoch in range(1, 1000):
         print(f"epoch {epoch}")
 
         model.train()
@@ -244,7 +244,7 @@ def train():
         for batch_index, batch in enumerate(read_batches('data/train_set')):
             # 切分小批次，有助于泛化模型
             train_acc_list_batch = []
-            for index in range(0, batch[0].shape[0], 10):
+            for index in range(0, batch[0].shape[0], 100):
                 batch_x, batch_y = split_batch_xy(batch, index, index+100) # img_frame, label
                 predicted = model(batch_x)
                 loss = loss_function(predicted, batch_y)
@@ -326,10 +326,6 @@ def eval_model():
             if not image_path:
                 continue
             img = cv2.imread(image_path)
-                # img_path = input('IMG_path:')
-                # if not img_path:
-                #     continue
-                # img = cv2.imread(img_path)
 
             candidate_boxes = selective_search(img)
             # 构建输入
@@ -350,7 +346,7 @@ def eval_model():
 
             # 判断概率大于 99% 的是人脸，添加边框到图片并保存
             img_out = img.copy()
-            indices = torch.where(tensor_out > 0.46)[0]
+            indices = torch.where(tensor_out > 0.99)[0]
             print(len(indices))
             result_boxes = []
             result_boxes_all = []
@@ -374,8 +370,8 @@ def eval_model():
             print('eeeeeeeeeeeeeeeeeerror')
 
 def main():
-    # prepare()
-    # train()
+    prepare()
+    train()
     eval_model()
 
 if __name__ == '__main__':
